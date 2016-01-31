@@ -33,10 +33,14 @@ def getTopKUsers(k=5):
     for aFile in onlyfiles[1:]:
         fullFilePath = join(dirPath, aFile)
         with open(fullFilePath, "rb") as csvfile:
-            # line by line csv-reader-object iterator for csv-file-object, csv-file-object points to disk file!
+            # Below LOC: line by line csv-reader-object iterator for csv-file-object, csv-file-object points to disk file!
             datareader = csv.reader(csvfile)
             for row in datareader:
-                print(datareader)
+                '''
+                    REMARK: The "for line in fileObject" syntax treats the file object as an iterable,
+                    which automatically uses buffered IO and memory management so
+                    we don't have to worry about large files.
+                '''
                 if (row[1] in IP_Count.keys()):
                     IP_Count[row[1]] += 1
                 else:
