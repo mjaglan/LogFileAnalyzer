@@ -32,9 +32,9 @@ def getTopKUsers(k=5):
     onlyfiles = [f for f in listdir(dirPath) if (isfile(join(dirPath, f)) and f.endswith(".csv"))]
     for aFile in onlyfiles[1:]:
         fullFilePath = join(dirPath, aFile)
-        with open(fullFilePath, "rb") as csvfile:
+        with open(fullFilePath, "rb") as ctsvfile:
             # Below LOC: line by line csv-reader-object iterator for csv-file-object, csv-file-object points to disk file!
-            datareader = csv.reader(csvfile)
+            datareader = csv.reader(ctsvfile, delimiter=',') # TSV: delimiter='\t';     CSV: delimiter=',';
             for row in datareader:
                 '''
                     REMARK: The "for line in fileObject" syntax treats the file object as an iterable,
