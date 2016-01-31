@@ -21,9 +21,6 @@ from os import listdir
 from os.path import isfile, join
 import heapq
 
-# constant
-ONE_GIGABYTE = pow(2,30)
-
 def getTopKUsers(k=5):
     IP_Count = dict()
 
