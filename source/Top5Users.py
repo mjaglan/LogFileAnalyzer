@@ -1,4 +1,13 @@
-def getTopKUsers():
+import csv
+import os
+from os import listdir
+from os.path import isfile, join
+import heapq
+
+# constant
+ONE_GIGABYTE = pow(2,30)
+
+def getTopKUsers_Idea():
     '''
     APPROACH #1: Handle large file and do computation on single machine
         T = ~ O(n)
@@ -6,13 +15,73 @@ def getTopKUsers():
     - Pass 1: make dictionary of (K=IP, V=count)
             Doable in O(n) time
 
-    - Pass 2: make dictionary of (K=count, V=list(IP))
+    - Pass 2.1: make dictionary of (K=count, V=list(IP))
             Doable in O(n) time, O(k) space
     OR
-    - Pass 2: Maintain a min-count heap (count,IP) of size k, replace min-count head-node with larger value node, do heapify
+    - Pass 2.2: Maintain a min-count heap (count,IP) of size k, replace min-count head-node with larger value node, do heapify
             Doable in O(n*logk) but general case will be quiet below this, O(k) space
 
 
     APPROACH #2: Break large file and do Map-Reduce jobs (try later)
     '''
     pass
+
+def readInChunks(fileObj, chunkSize=ONE_GIGABYTE):
+    """
+        Lazy function to read a file piece by piece.
+        Default chunk size: ONE GIGABYTE
+    """
+    while True:
+        data = fileObj.read(chunkSize)
+        if not data:
+            break
+        yield data
+
+
+def getTopKUsers_1(k=5):
+    IP_Count = dict()
+
+    cwd = os.getcwd()
+    dirPath = cwd+'/../logs'
+    onlyfiles = [f for f in listdir(dirPath) if (isfile(join(dirPath, f)) and f.endswith(".csv"))]
+    for aFile in onlyfiles[1:]:
+        fullFilePath = join(dirPath, aFile)
+        f = open(fullFilePath,"r")
+        for chunk in readInChunks(f):
+            print("\n\n")
+            print chunk[2]
+            # handle csv
+
+
+
+def getTopKUsers(k=5):
+    IP_Count = dict()
+
+    cwd = os.getcwd()
+    dirPath = cwd+'/../logs'
+    onlyfiles = [f for f in listdir(dirPath) if (isfile(join(dirPath, f)) and f.endswith(".csv"))]
+    # print(onlyfiles)
+    for aFile in onlyfiles[1:]:
+        fullFilePath = join(dirPath, aFile)
+        with open(fullFilePath, "rb") as csvfile:
+            datareader = csv.reader(csvfile)
+            for row in datareader:
+                if (row[1] in IP_Count.keys()):
+                    IP_Count[row[1]] += 1
+                else:
+                    IP_Count[row[1]] = 1
+
+    heap = []
+    for key in IP_Count.keys()[:k]:
+        heapq.heappush(heap, (IP_Count[key],key))
+
+    for key in IP_Count.keys()[k:]:
+        if (heap[0][0] < IP_Count[key]):
+            heapq.heappop(heap)
+            heapq.heappush(heap, (IP_Count[key], key))
+
+    for item in heap:
+        print(item)
+
+if __name__ == '__main__':
+    getTopKUsers()
