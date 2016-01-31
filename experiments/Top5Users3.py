@@ -21,11 +21,14 @@ from os.path import isfile, join
 import heapq
 
 # constant
+from itertools import islice
+
 ONE_GIGABYTE = pow(2,30)
+NL = '\n'
 
 # solution: http://stackoverflow.com/a/8009942
 # solution: http://stackoverflow.com/a/519653
-def readInChunks(fileObj, chunkSize=ONE_GIGABYTE):
+def readInChunks1(fileObj, chunkSize=ONE_GIGABYTE):
     """
         Lazy function to read a file piece by piece.
         Default chunk size: ONE GIGABYTE
@@ -36,22 +39,25 @@ def readInChunks(fileObj, chunkSize=ONE_GIGABYTE):
             break
         yield data
 
+def readInChunks(fileObj, chunkSize=10000):
+    while True:
+        data = list(islice(fileObj, chunkSize))
+        if not data:
+            break
+        yield data
 
 def getTopKUsers(k=5):
     cwd = os.getcwd()
     dirPath = cwd+'/../logs'
+    readWriteMode = 'r+'
 
-    dFullFilePath = join(dirPath, 'data_store1.txt') # 0
-    dictionaryFile1 = open(dFullFilePath,"a+")
-    dictionaryFile1.write("0.0.0.0" + ',' + "0" + '\n') # dummy write
-
-    dFullFilePath = join(dirPath, 'data_store2.txt') # 1
-    dictionaryFile2 = open(dFullFilePath,"a+")
-    dictionaryFile2.write("0.0.0.0" + ',' + "0" + '\n') # dummy write
-
-    dictObjList = [dictionaryFile1, dictionaryFile2]
     rToggle = 0
     wToggle = 1
+
+    dFullFilePath = [join(dirPath, 'data_store1.txt'), join(dirPath, 'data_store2.txt')]
+    dictObjList = [open(dFullFilePath[rToggle],readWriteMode), open(dFullFilePath[wToggle],readWriteMode)]
+    dictObjList[rToggle].write("0.0.0.0" + ',' + "0" + NL) # dummy write
+
     IP_Count = dict() # local dictionary for current raw chunk
     onlyfiles = [f for f in listdir(dirPath) if (isfile(join(dirPath, f)) and f.endswith(".csv"))]
     for aFile in onlyfiles[1:]:
@@ -59,7 +65,7 @@ def getTopKUsers(k=5):
         fo = open(fullFilePath,"r")
         for chunk in readInChunks(fo):
             # read raw chunk
-            for line in chunk.splitlines():
+            for line in chunk: #.splitlines():
                 ip = line.split(',')[1]
                 if (ip in IP_Count.keys()):
                     IP_Count[ip] += 1
@@ -67,30 +73,50 @@ def getTopKUsers(k=5):
                     IP_Count[ip] = 1
 
             # merge this chunk and write dictionary, TODO: how to put it first time?
-            for dChunk in readInChunks(dictObjList[rToggle]):
-                writeBuff = ''
-                for line in dChunk.splitlines():
-                    print(line)
-                    ip,cntStr = line.split(',')
-                    cnt = int(cntStr)
-                    if (ip in IP_Count.keys()):
-                        IP_Count[ip] += cnt
-                        writeBuff = writeBuff + ip + ',' + IP_Count[ip] + '\n'
-                    else:
-                        # WARNING: DO NOT add to IP_Count, otherwise memory overflow may happen!
-                        writeBuff = writeBuff + ip + ',' + cnt + '\n'
-                dictObjList[wToggle].write(writeBuff)
+            for eachIP in IP_Count.keys():
+                dictObjList[rToggle].seek(0,0)
+                foundInDictFile = False
+                for dChunk in readInChunks(dictObjList[rToggle]):
+                    for line in dChunk: #.splitlines():
+                        print(rToggle, line)
 
-            # update read-write turns swapped for next chunk
-            temp = rToggle
-            rToggle = wToggle
-            wToggle = temp
+                        line = line.strip()
+                        if line == '':
+                            continue
+
+                        ip,cntStr = line.split(',')
+                        cntStr = cntStr.strip()
+
+                        if (eachIP == ip):
+                            writeBuff = ip + ',' + str(IP_Count[ip] + int(cntStr)) + NL
+                            dictObjList[wToggle].write(writeBuff)
+                            foundInDictFile = True
+                            break
+
+                        if (ip not in IP_Count.keys()):
+                            writeBuff = ip + ',' + cntStr + NL
+                            dictObjList[wToggle].write(writeBuff)
+
+                    if foundInDictFile == True:
+                        break
+
+                if foundInDictFile == False: # if still not found!
+                    writeBuff = eachIP + ',' + str(IP_Count[eachIP]) + NL
+                    # dictObjList[wToggle].write(writeBuff)
+
+                # update read-write turns swapped for next chunk
+                temp = rToggle
+                rToggle = wToggle
+                wToggle = temp
+                # dictObjList[rToggle].flush()
+                # dictObjList[wToggle].flush()
+                dictObjList[wToggle] = open(dFullFilePath[wToggle],readWriteMode) # reset write file
 
             # clear local chunk dictionary
             IP_Count.clear()
 
     for dChunk in readInChunks(dictObjList[rToggle]):
-        for line in dChunk.splitlines():
+        for line in dChunk: #.splitlines():
             ipn,cntStr = line.split(',')
             cnt = int(cntStr)
             print(ipn,cnt)
