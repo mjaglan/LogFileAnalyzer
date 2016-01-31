@@ -1,14 +1,4 @@
-import csv
-import os
-from os import listdir
-from os.path import isfile, join
-import heapq
-
-# constant
-ONE_GIGABYTE = pow(2,30)
-
-def getTopKUsers_Idea():
-    '''
+'''
     APPROACH #1: Handle large file and do computation on single machine
         T = ~ O(n)
 
@@ -23,35 +13,16 @@ def getTopKUsers_Idea():
 
 
     APPROACH #2: Break large file and do Map-Reduce jobs (try later)
-    '''
-    pass
+'''
 
-def readInChunks(fileObj, chunkSize=ONE_GIGABYTE):
-    """
-        Lazy function to read a file piece by piece.
-        Default chunk size: ONE GIGABYTE
-    """
-    while True:
-        data = fileObj.read(chunkSize)
-        if not data:
-            break
-        yield data
+import csv
+import os
+from os import listdir
+from os.path import isfile, join
+import heapq
 
-
-def getTopKUsers_1(k=5):
-    IP_Count = dict()
-
-    cwd = os.getcwd()
-    dirPath = cwd+'/../logs'
-    onlyfiles = [f for f in listdir(dirPath) if (isfile(join(dirPath, f)) and f.endswith(".csv"))]
-    for aFile in onlyfiles[1:]:
-        fullFilePath = join(dirPath, aFile)
-        f = open(fullFilePath,"r")
-        for chunk in readInChunks(f):
-            print("\n\n")
-            print chunk[2]
-            # handle csv
-
+# constant
+ONE_GIGABYTE = pow(2,30)
 
 
 def getTopKUsers(k=5):
@@ -64,8 +35,9 @@ def getTopKUsers(k=5):
     for aFile in onlyfiles[1:]:
         fullFilePath = join(dirPath, aFile)
         with open(fullFilePath, "rb") as csvfile:
-            datareader = csv.reader(csvfile)
+            datareader = csv.reader(csvfile) # line by line csv-reader-object iterator for csv-file-object, csv-file-object points to disk file!
             for row in datareader:
+                print(datareader)
                 if (row[1] in IP_Count.keys()):
                     IP_Count[row[1]] += 1
                 else:
