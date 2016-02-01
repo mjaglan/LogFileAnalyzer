@@ -22,12 +22,12 @@ from os.path import isfile, join
 import heapq
 
 def getTopKUsers(k=5):
-    IP_Count = dict()
+    IP_Count = dict()   # TODO: What if it itself is too big to fit in RAM?
 
     cwd = os.getcwd()
     dirPath = cwd+'/../logs'
     onlyfiles = [f for f in listdir(dirPath) if (isfile(join(dirPath, f)) and f.endswith(".csv"))]
-    for aFile in onlyfiles[1:]:
+    for aFile in onlyfiles[:]:
         fullFilePath = join(dirPath, aFile)
         with open(fullFilePath, "rb") as ctsvfile:
             # Below LOC: line by line csv-reader-object iterator for csv-file-object, csv-file-object points to disk file!
@@ -42,7 +42,7 @@ def getTopKUsers(k=5):
                     IP_Count[row[1]] += 1
                 else:
                     IP_Count[row[1]] = 1
-
+        ctsvfile.close()
     heap = []
     for key in IP_Count.keys()[:k]:
         heapq.heappush(heap, (IP_Count[key],key))
