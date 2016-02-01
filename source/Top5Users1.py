@@ -29,7 +29,7 @@ def getTopKUsers(k=5):
     onlyfiles = [f for f in listdir(dirPath) if (isfile(join(dirPath, f)) and f.endswith(".csv"))]
     for aFile in onlyfiles[:]:
         fullFilePath = join(dirPath, aFile)
-        with open(fullFilePath, "rb") as ctsvfile:
+        with open(fullFilePath, "r") as ctsvfile:
             # Below LOC: line by line csv-reader-object iterator for csv-file-object, csv-file-object points to disk file!
             datareader = csv.reader(ctsvfile, delimiter=',') # TSV: delimiter='\t';     CSV: delimiter=',';
             for row in datareader:
