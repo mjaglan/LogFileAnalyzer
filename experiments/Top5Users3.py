@@ -2,17 +2,15 @@
     APPROACH #1: Handle large file and do computation on single machine
         T = ~ O(n)
 
-    - Pass 1: make dictionary of (K=IP, V=count)
-            Doable in O(n) time, O(n) space
+    - Pass 1: write csv dictionary of (K=IP, V=count)
+            HANDLING: What if the dictionary itself is too big to fit in RAM?
 
-    - Pass 2.1: make dictionary of (K=count, V=list(IP))
-            Doable in O(n) time, O(n) space
-    OR
-    - Pass 2.2: Maintain a min-count heap (count,IP) of size k, replace min-count head-node with larger value node, do heapify
+    - Pass 2: Maintain a min-count heap (count,IP) of size k, replace min-count head-node with larger value node, do heapify
             Doable in O(n * log k) but general case will be quiet below this, O(k) space
 
 
     APPROACH #2: Break large file and do Map-Reduce jobs (try later)
+                PROBLEM: Hadoop 1.1.2 HDFS Connection Refused, Mapper not mapping properly. Reducer set to 1 for now.
 '''
 
 import os
@@ -39,9 +37,9 @@ def readInChunks1(fileObj, chunkSize=ONE_GIGABYTE):
             break
         yield data
 
-def readInChunks(fileObj, chunkSize=10000):
+def readInChunks(fileObj, MaxLines=10000):
     while True:
-        data = list(islice(fileObj, chunkSize))
+        data = list(islice(fileObj, MaxLines))
         if not data:
             break
         yield data
@@ -102,7 +100,7 @@ def getTopKUsers(k=5):
 
                 if foundInDictFile == False: # if still not found!
                     writeBuff = eachIP + ',' + str(IP_Count[eachIP]) + NL
-                    # dictObjList[wToggle].write(writeBuff)
+                    dictObjList[wToggle].write(writeBuff)                   # buggy here with unpredictable behavior!
 
                 # update read-write turns swapped for next chunk
                 temp = rToggle
@@ -114,21 +112,24 @@ def getTopKUsers(k=5):
 
             # clear local chunk dictionary
             IP_Count.clear()
+        fo.close()
 
+    heap = []
+    recordNumber = 0
     for dChunk in readInChunks(dictObjList[rToggle]):
         for line in dChunk: #.splitlines():
             ipn,cntStr = line.split(',')
             cnt = int(cntStr)
-            print(ipn,cnt)
+            if recordNumber < k:
+                heapq.heappush(heap, (cnt,ipn))
+                recordNumber += 1
+            else:
+                if (heap[0][0] < cnt):
+                    heapq.heappop(heap)
+                    heapq.heappush(heap, (cnt, ipn))
 
-    heap = []
-    for key in IP_Count.keys()[:k]:
-        heapq.heappush(heap, (IP_Count[key],key))
-
-    for key in IP_Count.keys()[k:]:
-        if (heap[0][0] < IP_Count[key]):
-            heapq.heappop(heap)
-            heapq.heappush(heap, (IP_Count[key], key))
+    for fobj in dictObjList:
+        fobj.close()
 
     for item in heap:
         print(item)
