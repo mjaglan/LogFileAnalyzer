@@ -2,17 +2,15 @@
     APPROACH #1: Handle large file and do computation on single machine
         T = ~ O(n)
 
-    - Pass 1: make dictionary of (K=IP, V=count)
-            Doable in O(n) time, O(n) space
+    - Pass 1: write csv dictionary of (K=IP, V=count)
+            HANDLING: What if the dictionary itself is too big to fit in RAM?
 
-    - Pass 2.1: make dictionary of (K=count, V=list(IP))
-            Doable in O(n) time, O(n) space
-    OR
-    - Pass 2.2: Maintain a min-count heap (count,IP) of size k, replace min-count head-node with larger value node, do heapify
+    - Pass 2: Maintain a min-count heap (count,IP) of size k, replace min-count head-node with larger value node, do heapify
             Doable in O(n * log k) but general case will be quiet below this, O(k) space
 
 
     APPROACH #2: Break large file and do Map-Reduce jobs (try later)
+                PROBLEM: Hadoop 1.1.2 HDFS Connection Refused, Mapper not mapping properly. Reducer set to 1 for now.
 '''
 
 import os
@@ -34,7 +32,7 @@ def readInChunks1(fileObj, chunkSize=ONE_GIGABYTE):
         Default chunk size: ONE GIGABYTE
     """
     while True:
-        data = fileObj.read(chunkSize)
+        data = fileObj.read(chunkSize) # problem here?
         if not data:
             break
         yield data
