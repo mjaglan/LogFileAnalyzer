@@ -63,3 +63,6 @@ target/
 
 #pycharm
 .idea*
+
+#local datastore
+logs/*.csv
